@@ -40,11 +40,13 @@ class PasswordViewModel extends ChangeNotifier {
   }
 
   // Add new password
-  Future<void> addPassword({
+  Future<bool> addPassword({
     required String title,
     required String username,
     required String password,
     String? url,
+    String? category,
+    String? notes,
   }) async {
     _isLoading = true;
     _errorMessage = null;
@@ -52,32 +54,40 @@ class PasswordViewModel extends ChangeNotifier {
 
     try {
       const uuid = Uuid();
+      final now = DateTime.now();
       final passwordEntity = PasswordEntity(
         id: uuid.v4(),
         title: title,
         username: username,
         password: password,
         url: url,
-        createdAt: DateTime.now(),
+        category: category,
+        notes: notes,
+        createdAt: now,
+        updatedAt: now,
       );
 
       await _repository.addPassword(passwordEntity);
       await loadPasswords(); // Refresh list
+      return true;
     } catch (e) {
       _errorMessage = 'Failed to add password: ${e.toString()}';
       debugPrint(_errorMessage);
       _isLoading = false;
       notifyListeners();
+      return false;
     }
   }
 
   // Update password
-  Future<void> updatePassword({
+  Future<bool> updatePassword({
     required String id,
     required String title,
     required String username,
     required String password,
     String? url,
+    String? category,
+    String? notes,
     required DateTime createdAt,
   }) async {
     _isLoading = true;
@@ -91,21 +101,26 @@ class PasswordViewModel extends ChangeNotifier {
         username: username,
         password: password,
         url: url,
+        category: category,
+        notes: notes,
         createdAt: createdAt,
+        updatedAt: DateTime.now(),
       );
 
       await _repository.updatePassword(passwordEntity);
       await loadPasswords(); // Refresh list
+      return true;
     } catch (e) {
       _errorMessage = 'Failed to update password: ${e.toString()}';
       debugPrint(_errorMessage);
       _isLoading = false;
       notifyListeners();
+      return false;
     }
   }
 
   // Delete password
-  Future<void> deletePassword(String id) async {
+  Future<bool> deletePassword(String id) async {
     _isLoading = true;
     _errorMessage = null;
     notifyListeners();
@@ -113,11 +128,13 @@ class PasswordViewModel extends ChangeNotifier {
     try {
       await _repository.deletePassword(id);
       await loadPasswords(); // Refresh list
+      return true;
     } catch (e) {
       _errorMessage = 'Failed to delete password: ${e.toString()}';
       debugPrint(_errorMessage);
       _isLoading = false;
       notifyListeners();
+      return false;
     }
   }
 
@@ -156,8 +173,18 @@ class PasswordViewModel extends ChangeNotifier {
     }
 
     // Apply category filter
-    // Note: Category feature will be added later when we update the model
-    // For now, we'll skip category filtering
+    if (_selectedCategory != 'All') {
+      _filteredPasswords = _filteredPasswords.where((password) {
+        // Map category names
+        final categoryMap = {
+          'Social': 'Social Media',
+          'Work': 'Work',
+          'Finance': 'Banking',
+        };
+        final targetCategory = categoryMap[_selectedCategory] ?? _selectedCategory;
+        return password.category == targetCategory;
+      }).toList();
+    }
   }
 
   // Get password by ID

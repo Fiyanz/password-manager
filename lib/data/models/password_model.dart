@@ -1,4 +1,4 @@
-import '../../../domain/entities/password_entity.dart';
+import '../../domain/entities/password_entity.dart';
 
 class PasswordModel {
   final String id;
@@ -7,6 +7,7 @@ class PasswordModel {
   final String password;
   final String? url;
   final String? category;
+  final String? notes;
   final String createdAt;
   final String updatedAt;
 
@@ -17,6 +18,7 @@ class PasswordModel {
     required this.password,
     this.url,
     this.category,
+    this.notes,
     required this.createdAt,
     required this.updatedAt,
   });
@@ -30,6 +32,7 @@ class PasswordModel {
       password: json['password'] as String,
       url: json['url'] as String?,
       category: json['category'] as String?,
+      notes: json['notes'] as String?,
       createdAt: json['created_at'] as String,
       updatedAt: json['updated_at'] as String,
     );
@@ -44,6 +47,7 @@ class PasswordModel {
       'password': password,
       'url': url,
       'category': category,
+      'notes': notes,
       'created_at': createdAt,
       'updated_at': updatedAt,
     };
@@ -57,22 +61,25 @@ class PasswordModel {
       username: username,
       password: password,
       url: url,
+      category: category,
+      notes: notes,
       createdAt: DateTime.parse(createdAt),
+      updatedAt: DateTime.parse(updatedAt),
     );
   }
 
   // Conversion from Entity (Domain layer)
   factory PasswordModel.fromEntity(PasswordEntity entity) {
-    final now = DateTime.now().toIso8601String();
     return PasswordModel(
       id: entity.id,
       title: entity.title,
       username: entity.username,
       password: entity.password,
       url: entity.url,
-      category: null, // Will be added later
+      category: entity.category,
+      notes: entity.notes,
       createdAt: entity.createdAt.toIso8601String(),
-      updatedAt: now,
+      updatedAt: entity.updatedAt.toIso8601String(),
     );
   }
 
@@ -84,6 +91,7 @@ class PasswordModel {
     String? password,
     String? url,
     String? category,
+    String? notes,
     String? createdAt,
     String? updatedAt,
   }) {
@@ -94,6 +102,7 @@ class PasswordModel {
       password: password ?? this.password,
       url: url ?? this.url,
       category: category ?? this.category,
+      notes: notes ?? this.notes,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
     );
