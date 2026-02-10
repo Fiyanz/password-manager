@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../../core/constants/app_colors.dart';
 import '../../domain/entities/password_entity.dart';
 import '../viewmodels/password_viewmodel.dart';
@@ -88,7 +89,7 @@ class _PasswordDetailPageState extends State<PasswordDetailPage> {
               Navigator.pop(context);
               final viewModel = context.read<PasswordViewModel>();
               final success = await viewModel.deletePassword(widget.passwordId);
-              if (success && mounted) {
+              if (success && context.mounted) {
                 Navigator.pop(context, true);
               }
             },
@@ -122,6 +123,36 @@ class _PasswordDetailPageState extends State<PasswordDetailPage> {
       return uri.host;
     } catch (_) {
       return url;
+    }
+  }
+
+  Future<void> _launchUrl(String? urlString) async {
+    if (urlString == null || urlString.isEmpty) return;
+
+    final Uri url = Uri.parse(
+      urlString.contains('://') ? urlString : 'https://$urlString',
+    );
+
+    try {
+      if (!await launchUrl(url, mode: LaunchMode.externalApplication)) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Could not launch URL'),
+              backgroundColor: AppColors.danger,
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error launching URL: $e'),
+            backgroundColor: AppColors.danger,
+          ),
+        );
+      }
     }
   }
 
@@ -200,11 +231,25 @@ class _PasswordDetailPageState extends State<PasswordDetailPage> {
                             ),
                           ),
                           const SizedBox(height: 4),
-                          Text(
-                            '${_password!.category ?? 'Personal Account'} • ${_getDomain(_password!.url)}',
-                            style: const TextStyle(
-                              color: AppColors.textGrey,
-                              fontSize: 14,
+                          GestureDetector(
+                            onTap: () => _launchUrl(_password!.url),
+                            child: RichText(
+                              text: TextSpan(
+                                style: const TextStyle(
+                                  fontSize: 14,
+                                  color: AppColors.textGrey,
+                                ),
+                                children: [
+                                  TextSpan(text: '${_password!.category ?? 'Personal Account'} • '),
+                                  TextSpan(
+                                    text: _getDomain(_password!.url),
+                                    style: const TextStyle(
+                                      color: AppColors.primary,
+                                      decoration: TextDecoration.underline,
+                                    ),
+                                  ),
+                                ],
+                              ),
                             ),
                           ),
                         ],
@@ -232,11 +277,11 @@ class _PasswordDetailPageState extends State<PasswordDetailPage> {
                         label: 'WEBSITE',
                         value: _password!.url!,
                         onCopy: () => _copyToClipboard(_password!.url!, 'Website'),
+                        isLink: true,
+                        onTapValue: () => _launchUrl(_password!.url),
                         trailing: IconButton(
                           icon: const Icon(Icons.open_in_new, color: AppColors.primary, size: 20),
-                          onPressed: () {
-                            // TODO: Open URL in browser
-                          },
+                          onPressed: () => _launchUrl(_password!.url),
                         ),
                       ),
                     if (_password!.url != null && _password!.url!.isNotEmpty)
@@ -372,6 +417,8 @@ class _PasswordDetailPageState extends State<PasswordDetailPage> {
     required String value,
     VoidCallback? onCopy,
     Widget? trailing,
+    bool isLink = false,
+    VoidCallback? onTapValue,
   }) {
     return Container(
       padding: const EdgeInsets.all(16),
@@ -401,12 +448,17 @@ class _PasswordDetailPageState extends State<PasswordDetailPage> {
           Row(
             children: [
               Expanded(
-                child: Text(
-                  value,
-                  style: const TextStyle(
-                    color: AppColors.textDark,
-                    fontSize: 16,
-                    fontWeight: FontWeight.w500,
+                child: GestureDetector(
+                  onTap: onTapValue,
+                  child: Text(
+                    value,
+                    style: TextStyle(
+                      color: isLink ? AppColors.primary : AppColors.textDark,
+                      fontSize: 16,
+                      fontWeight: FontWeight.w500,
+                      decoration: isLink ? TextDecoration.underline : null,
+                      decorationColor: AppColors.primary,
+                    ),
                   ),
                 ),
               ),
