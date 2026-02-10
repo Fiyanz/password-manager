@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 import '../../core/constants/app_colors.dart';
 import '../../domain/entities/password_entity.dart';
 import '../viewmodels/password_viewmodel.dart';
+import 'add_password_page.dart';
 
 class PasswordDetailPage extends StatefulWidget {
   final String passwordId;
@@ -99,16 +100,19 @@ class _PasswordDetailPageState extends State<PasswordDetailPage> {
     );
   }
 
-  void _navigateToEdit() {
-    // For now, we'll implement inline editing or create a separate edit page
-    // TODO: Navigate to edit page
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Edit feature coming soon'),
-        backgroundColor: AppColors.primary,
-        behavior: SnackBarBehavior.floating,
+  Future<void> _navigateToEdit() async {
+    if (_password == null) return;
+    final result = await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => AddPasswordPage(
+          existingPassword: _password,
+        ),
       ),
     );
+    if (result == true && mounted) {
+      _loadPassword();
+    }
   }
 
   String _getDomain(String? url) {

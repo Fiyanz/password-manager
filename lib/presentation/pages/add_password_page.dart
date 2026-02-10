@@ -1,13 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../core/constants/app_colors.dart';
+import '../../domain/entities/password_entity.dart';
 import '../viewmodels/password_viewmodel.dart';
 import 'generator_page.dart';
 
 class AddPasswordPage extends StatefulWidget {
   final String? initialPassword;
+  final PasswordEntity? existingPassword;
   
-  const AddPasswordPage({super.key, this.initialPassword});
+  const AddPasswordPage({super.key, this.initialPassword, this.existingPassword});
+
+  bool get isEditMode => existingPassword != null;
 
   @override
   State<AddPasswordPage> createState() => _AddPasswordPageState();
@@ -18,6 +22,7 @@ class _AddPasswordPageState extends State<AddPasswordPage> {
   final _titleController = TextEditingController();
   final _usernameController = TextEditingController();
   final _passwordController = TextEditingController();
+  final _urlController = TextEditingController();
   final _notesController = TextEditingController();
   final _customCategoryController = TextEditingController();
 
@@ -29,7 +34,23 @@ class _AddPasswordPageState extends State<AddPasswordPage> {
   @override
   void initState() {
     super.initState();
-    if (widget.initialPassword != null) {
+    if (widget.existingPassword != null) {
+      final p = widget.existingPassword!;
+      _titleController.text = p.title;
+      _usernameController.text = p.username;
+      _passwordController.text = p.password;
+      _urlController.text = p.url ?? '';
+      _notesController.text = p.notes ?? '';
+      if (p.category != null && p.category!.isNotEmpty) {
+        if (_categories.contains(p.category)) {
+          _selectedCategory = p.category;
+        } else {
+          _selectedCategory = 'Other';
+          _isOtherCategory = true;
+          _customCategoryController.text = p.category!;
+        }
+      }
+    } else if (widget.initialPassword != null) {
       _passwordController.text = widget.initialPassword!;
     }
   }
@@ -49,6 +70,7 @@ class _AddPasswordPageState extends State<AddPasswordPage> {
     _titleController.dispose();
     _usernameController.dispose();
     _passwordController.dispose();
+    _urlController.dispose();
     _notesController.dispose();
     _customCategoryController.dispose();
     super.dispose();
@@ -61,13 +83,32 @@ class _AddPasswordPageState extends State<AddPasswordPage> {
       });
 
       final viewModel = context.read<PasswordViewModel>();
-      final success = await viewModel.addPassword(
-        title: _titleController.text.trim(),
-        username: _usernameController.text.trim(),
-        password: _passwordController.text,
-        category: _isOtherCategory ? _customCategoryController.text.trim() : _selectedCategory,
-        notes: _notesController.text.trim().isNotEmpty ? _notesController.text.trim() : null,
-      );
+      final category = _isOtherCategory ? _customCategoryController.text.trim() : _selectedCategory;
+      final url = _urlController.text.trim().isNotEmpty ? _urlController.text.trim() : null;
+      final notes = _notesController.text.trim().isNotEmpty ? _notesController.text.trim() : null;
+
+      bool success;
+      if (widget.isEditMode) {
+        success = await viewModel.updatePassword(
+          id: widget.existingPassword!.id,
+          title: _titleController.text.trim(),
+          username: _usernameController.text.trim(),
+          password: _passwordController.text,
+          url: url,
+          category: category,
+          notes: notes,
+          createdAt: widget.existingPassword!.createdAt,
+        );
+      } else {
+        success = await viewModel.addPassword(
+          title: _titleController.text.trim(),
+          username: _usernameController.text.trim(),
+          password: _passwordController.text,
+          url: url,
+          category: category,
+          notes: notes,
+        );
+      }
 
       setState(() {
         _isSaving = false;
@@ -155,8 +196,8 @@ class _AddPasswordPageState extends State<AddPasswordPage> {
           ),
         ),
         leadingWidth: 100,
-        title: const Text(
-          'Add New Password',
+        title: Text(
+          widget.isEditMode ? 'Edit Password' : 'Add New Password',
           style: TextStyle(
             color: AppColors.textDark,
             fontSize: 18,
@@ -202,6 +243,16 @@ class _AddPasswordPageState extends State<AddPasswordPage> {
 
             // Password field with Generate link
             _buildPasswordField(),
+            const SizedBox(height: 20),
+
+            // Website URL field
+            _buildInputField(
+              label: 'Website URL',
+              controller: _urlController,
+              hint: 'e.g., https://instagram.com',
+              icon: Icons.language,
+              keyboardType: TextInputType.url,
+            ),
             const SizedBox(height: 20),
 
             // Category dropdown
@@ -257,6 +308,7 @@ class _AddPasswordPageState extends State<AddPasswordPage> {
     required String hint,
     required IconData icon,
     String? Function(String?)? validator,
+    TextInputType? keyboardType,
   }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -273,6 +325,7 @@ class _AddPasswordPageState extends State<AddPasswordPage> {
         TextFormField(
           controller: controller,
           validator: validator,
+          keyboardType: keyboardType,
           decoration: InputDecoration(
             hintText: hint,
             hintStyle: const TextStyle(color: AppColors.textGrey, fontSize: 14),

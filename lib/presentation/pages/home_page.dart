@@ -80,6 +80,7 @@ class _HomePageState extends State<HomePage> {
         onPressed: _navigateToAdd,
         backgroundColor: AppColors.primary,
         elevation: 4,
+        shape: const CircleBorder(),
         child: const Icon(Icons.add, color: AppColors.white, size: 28),
       ),
       floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
