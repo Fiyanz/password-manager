@@ -154,7 +154,10 @@ class _GeneratorPageState extends State<GeneratorPage> {
         ),
         centerTitle: true,
       ) : null,
-      body: ListView(
+      body: SafeArea(
+        top: !widget.isStandalone,
+        bottom: false,
+        child: ListView(
         padding: const EdgeInsets.all(20),
         children: [
           // Generated password display card
@@ -431,6 +434,7 @@ class _GeneratorPageState extends State<GeneratorPage> {
               ),
             ),
         ],
+        ),
       ),
     );
   }

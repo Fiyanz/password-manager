@@ -21,7 +21,6 @@ class _HomePageState extends State<HomePage> {
   final TextEditingController _searchController = TextEditingController();
   bool _isSearchVisible = false;
 
-  final List<String> _categories = ['All', 'Social', 'Work', 'Finance'];
 
   @override
   void dispose() {
@@ -253,7 +252,7 @@ class _HomePageState extends State<HomePage> {
                         fontWeight: FontWeight.w700,
                       ),
                     ),
-                    Text('💙', style: TextStyle(fontSize: 20)),
+                    // Text('💙', style: TextStyle(fontSize: 20)),
                   ],
                 ),
                 const SizedBox(height: 2),
@@ -321,14 +320,16 @@ class _HomePageState extends State<HomePage> {
   }
 
   Widget _buildCategoryChips() {
+    final viewModel = context.watch<PasswordViewModel>();
+    final categories = viewModel.categories;
     return Container(
       height: 50,
       padding: const EdgeInsets.only(left: 20),
       child: ListView.builder(
         scrollDirection: Axis.horizontal,
-        itemCount: _categories.length,
+        itemCount: categories.length,
         itemBuilder: (context, index) {
-          final category = _categories[index];
+          final category = categories[index];
           final isSelected = _selectedCategory == category;
           
           return Padding(

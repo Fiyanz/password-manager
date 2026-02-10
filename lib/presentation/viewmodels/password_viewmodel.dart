@@ -19,6 +19,18 @@ class PasswordViewModel extends ChangeNotifier {
   String get searchQuery => _searchQuery;
   String get selectedCategory => _selectedCategory;
 
+  /// Dynamic categories extracted from all saved passwords
+  List<String> get categories {
+    final cats = _passwords
+        .map((p) => p.category)
+        .where((c) => c != null && c.isNotEmpty)
+        .cast<String>()
+        .toSet()
+        .toList();
+    cats.sort();
+    return ['All', ...cats];
+  }
+
   PasswordViewModel(this._repository);
 
   // Load all passwords
@@ -175,14 +187,7 @@ class PasswordViewModel extends ChangeNotifier {
     // Apply category filter
     if (_selectedCategory != 'All') {
       _filteredPasswords = _filteredPasswords.where((password) {
-        // Map category names
-        final categoryMap = {
-          'Social': 'Social Media',
-          'Work': 'Work',
-          'Finance': 'Banking',
-        };
-        final targetCategory = categoryMap[_selectedCategory] ?? _selectedCategory;
-        return password.category == targetCategory;
+        return password.category == _selectedCategory;
       }).toList();
     }
   }
